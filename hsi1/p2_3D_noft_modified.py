@@ -294,8 +294,8 @@ parser.add_argument('-model_name', '--model_name', default='', type=str, metavar
 args = parser.parse_args()
 data_dir = args.data_dir
 results_base_model = args.result_dir
-
 model_name_list = [args.model_name]
+num_epochs=args.epochs
 
 
 # run and save results
