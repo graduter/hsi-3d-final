@@ -28,7 +28,7 @@ print("PyTorch Version: ", torch.__version__)
 print("Torchvision Version: ", torchvision.__version__)
 print(torch.version.cuda)
 # os.environ["CUDA_VISIBLE_DEVICES"] = "2"
-device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 data_dir = '/home/data/zfl/data'
 results_base_model = '/home/data/zfl/results/results_from_scratch_modified.txt'
 num_output = 1
@@ -38,7 +38,7 @@ model_name_list = ['resnet3D_modified_2','resnet3D_modified_3','resnet3D_modifie
 learning_rate_list_large = [0.001,0.0001,0.00001]
 learning_rate_list_small = [0.00005,0.00001,0.000005]
 weight_decay_list = [0.01,0.001,0.0001]
-device_ids = [2,3]
+device_ids = [0,1,2,3]
 C3D_basic_channel_num = 16
 image_depth = 140
 image_width = 160
