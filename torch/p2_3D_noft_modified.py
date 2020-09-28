@@ -6,23 +6,16 @@ import torch.optim as optim
 import numpy as np
 import pandas as pd
 import torchvision
-from torchvision import datasets, models, transforms
 from torch.utils.data import Dataset
 import time
 import os
 import copy
-from spectral import *
 import math
 import pickle
-import p2_resnet3D as resnet3D
 import p2_resnet3D_modified_1 as resnet3D_modified_1
 import p2_resnet3D_modified_2 as resnet3D_modified_2
 import p2_resnet3D_modified_3 as resnet3D_modified_3
-import p2_squeezenet3D as squeezenet3D
-import p2_shufflenet3D as shufflenet3D
-import p2_mobilenet3D as mobilenet3D
-# import p2_densenet3D as densenet3D
-# import matplotlib.pyplot as plt
+import argparse
 
 print("PyTorch Version: ", torch.__version__)
 print("Torchvision Version: ", torchvision.__version__)
@@ -38,7 +31,7 @@ model_name_list = ['resnet3D_modified_2','resnet3D_modified_3','resnet3D_modifie
 learning_rate_list_large = [0.001,0.0001,0.00001]
 learning_rate_list_small = [0.00005,0.00001,0.000005]
 weight_decay_list = [0.01,0.001,0.0001]
-device_ids = [0,1,2,3]
+device_ids = [0]
 C3D_basic_channel_num = 16
 image_depth = 140
 image_width = 160
@@ -249,7 +242,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25):
 
 
 # test
-def test_model(model, dataloaders):
+def val_model(model, dataloaders):
     model.eval()
     with torch.no_grad():                                                                      # 在gpu上测试，不需要计算梯度，设为eval模式，且加上不计算梯度的条件，否则内存会溢出，转到cpu上速度慢，要去除DataParallel wrap，model = model.module.cpu()
         for phase in ['val', 'train']:
@@ -286,7 +279,21 @@ def test_model(model, dataloaders):
         return val_mse,val_r2,val_y_pred,val_y_true,test_mse,test_r2,test_y_pred,test_y_true
 
 
-
+parser = argparse.ArgumentParser()
+parser.add_argument('-n', '--nodes', default=1, type=int, metavar='N')
+parser.add_argument('-g', '--gpus', default=1, type=int,
+                    help='number of gpus per node')
+parser.add_argument('-nr', '--nr', default=0, type=int,
+                    help='ranking within the nodes')
+parser.add_argument('--epochs', default=2, type=int, metavar='N',
+                    help='number of total epochs to run')
+parser.add_argument('-data_dir', '--data_dir', default='/hsi-data/train_resized_merged', type=str, metavar='N',
+                    help='number of total epochs to run')
+parser.add_argument('-results_dir', '--results_dir', default='', type=str, metavar='N',
+                    help='number of total epochs to run')
+args = parser.parse_args()
+data_dir = args.data_dir
+results_base_model = args.results.dir
 
 # run and save results
 dataloaders_dict = get_data()
@@ -313,7 +320,7 @@ for model_name in model_name_list:
             #     net = shufflenet3D.get_model(groups=3, num_classes=num_output)
             # if model_name == 'mobilenet3D':
             #     net = mobilenet3D.get_model(num_classes=num_output)
-            print(net)
+            # print(net)
             net = torch.nn.DataParallel(net, device_ids = device_ids)
             if hasattr(torch.cuda, 'empty_cache'):
                 torch.cuda.empty_cache()
@@ -325,7 +332,7 @@ for model_name in model_name_list:
             optimizer = optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9, weight_decay=weight_decay)
             scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
             net, val_loss_history, train_loss_history = train_model(net, dataloaders_dict, criterion, optimizer, num_epochs=num_epochs)
-            val_mse,val_r2,val_y_pred,val_y_true,test_mse,test_r2,test_y_pred,test_y_true = test_model(net, dataloaders_dict)
+            val_mse,val_r2,val_y_pred,val_y_true,test_mse,test_r2,test_y_pred,test_y_true = val_model(net, dataloaders_dict)
             results = {}
             results['val_loss_history'] = [np.round(h,4) for h in val_loss_history]
             results['train_loss_history'] = [np.round(h, 4) for h in train_loss_history]
@@ -350,7 +357,3 @@ for model_name in model_name_list:
 
 print('Finished Training')
 
-
-
-# net = resnet3D.resnet10(sample_duration=image_depth, sample_size_w=image_width, sample_size_l=image_length, num_classes=num_output)      resnet3D_del
-# net = densenet3D.generate_model(model_depth=121, num_classes=num_output, n_input_channels=1)                                             最小的densenet3D也闪存不足
