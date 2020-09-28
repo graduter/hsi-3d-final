@@ -283,7 +283,7 @@ def test_model(model, dataloaders):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--epochs', default=2, type=int, metavar='N',
+parser.add_argument('--epochs', default=70, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('-data_dir', '--data_dir', default='/hsi-data/train_resized_merged', type=str, metavar='N',
                     help='number of total epochs to run')
