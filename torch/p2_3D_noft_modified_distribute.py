@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 import torchvision
 from torch.utils.data import Dataset
+import torch.multiprocessing as mp
+import torch.distributed as dist
 import time
 import os
 import copy
@@ -22,7 +24,7 @@ print("Torchvision Version: ", torchvision.__version__)
 print(torch.version.cuda)
 # os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-data_dir = '/Users/liudengtao/PycharmProjects/3D/samples'
+data_dir = '/home/data/zfl/data'
 results_base_model = '/home/data/zfl/results/results_from_scratch_modified.txt'
 num_output = 1
 batch_size = 8
@@ -37,6 +39,7 @@ image_depth = 140
 image_width = 160
 image_length = 160
 # 140, 120, 160
+
 
 # get data
 class HSIDataset(Dataset):
@@ -84,20 +87,12 @@ def get_data():
     HSI_datasets = {x: HSIDataset(os.path.join(data_dir, x + '_resized_merged') + '/' + x + '_labels.xlsx',
                                   os.path.join(data_dir, x + '_resized_merged'))
                     for x in ['train', 'val']}                                     # 对train、val、test，得到x和y一一对应的数据集      , 'test'
-    # for i in range(len(HSI_datasets['train'])):
-    #     sample = HSI_datasets['train'][i]
-    #     print(i, sample['image'].shape, sample['label'])                                 # HSI_datasets 循环拿数据方式
-    dataloaders_dict = {
-        'train': torch.utils.data.DataLoader(HSI_datasets['train'], batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True),
-        'val': torch.utils.data.DataLoader(HSI_datasets['val'], batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
-        # 'test': torch.utils.data.DataLoader(HSI_datasets['test'], batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
-        }                                                                                  # 对train、val、test，将数据集构建成dataloader
-    return dataloaders_dict
-    # for batch in dataloaders_dict['train']:                                              # or: for i,batch in enumerate(dataloaders_dict['train'])
-    #     print(batch['image'].shape, batch['label'].shape)                                # dataloader的batch循环方式
-    # for inputs, labels in dataloaders_dict['test']:                                      # 之前RGB图像dataloader的batch循环方式
-    #     print(inputs.shape)
-    #     print(labels)
+    # dataloaders_dict = {
+    #     'train': torch.utils.data.DataLoader(HSI_datasets['train'], batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True),
+    #     'val': torch.utils.data.DataLoader(HSI_datasets['val'], batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
+    #     # 'test': torch.utils.data.DataLoader(HSI_datasets['test'], batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
+    #     }                                                                                  # 对train、val、test，将数据集构建成dataloader
+    return HSI_datasets
 
 
 
@@ -192,12 +187,40 @@ class C3D(nn.Module):
 
 
 # train and validation
-def train_model(model, dataloaders, criterion, optimizer, num_epochs=25):
+def train_model(gpu, model, dataset , num_epochs=25):
     since = time.time()
     val_loss_history = []
     train_loss_history = []
     best_model_wts = copy.deepcopy(model.state_dict())                    # state_dict（状态字典）：获取模型当前的参数,以一个有序字典形式返回。这个有序字典中,key 是各层参数名,value 就是参数。
     best_loss = 10000000000000000000000.0
+
+    ###############################################################
+    rank = args.nr * args.gpus + gpu
+    dist.init_process_group(
+        backend='nccl',
+        init_method='env://',
+        world_size=args.world_size,
+        rank=rank
+    )
+    ###############################################################
+
+    torch.cuda.set_device(gpu)
+    model.cuda(gpu)
+    optimizer = optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9, weight_decay=weight_decay)
+    criterion = nn.MSELoss()
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+
+    ###############################################################
+    # Wrap the model
+    model = nn.parallel.DistributedDataParallel(model, device_ids=[gpu])
+    train_sampler = torch.utils.data.distributed.DistributedSampler(dataset['train'], num_replicas=args.world_size,
+                                                                    rank=rank)
+
+    dataloaders = torch.utils.data.DataLoader(dataset['train'], batch_size=batch_size, shuffle=True, num_workers=4,
+                                              sampler=train_sampler)
+
+    ################################################################
+
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
@@ -242,6 +265,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25):
 
 # test
 def val_model(model, dataloaders):
+
     model.eval()
     with torch.no_grad():                                                                      # 在gpu上测试，不需要计算梯度，设为eval模式，且加上不计算梯度的条件，否则内存会溢出，转到cpu上速度慢，要去除DataParallel wrap，model = model.module.cpu()
         for phase in ['val', 'train']:
@@ -294,10 +318,12 @@ args = parser.parse_args()
 data_dir = args.data_dir
 results_base_model = args.result_dir
 
-
 # run and save results
-dataloaders_dict = get_data()
-criterion = nn.MSELoss()                                                                     # nn.CrossEntropyLoss()
+HSI_datasets = get_data()
+                                                                    # nn.CrossEntropyLoss()
+
+args.world_size = args.gpus * args.nodes
+mp.spawn(train_model, nprocs=args.gpus, args=(args,))
 
 for model_name in model_name_list:
     if model_name in ['resnet3D_modified_1','resnet3D_modified_2','resnet3D_modified_3']:
@@ -321,29 +347,31 @@ for model_name in model_name_list:
             # if model_name == 'mobilenet3D':
             #     net = mobilenet3D.get_model(num_classes=num_output)
             # print(net)
-            net = torch.nn.DataParallel(net, device_ids = device_ids)
+
+            # net = torch.nn.DataParallel(net, device_ids = device_ids)
             if hasattr(torch.cuda, 'empty_cache'):
                 torch.cuda.empty_cache()
-            net = net.to(device)
+
             net_total_params = sum(p.numel() for p in net.parameters() if p.requires_grad)
             print("Total number of trainable parameters of " + model_name + " is: {}".format(net_total_params))
             print("Initial learning rate is: {}".format(learning_rate))
             print("weight decay is: {}".format(weight_decay))
-            optimizer = optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9, weight_decay=weight_decay)
-            scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
-            net, val_loss_history, train_loss_history = train_model(net, dataloaders_dict, criterion, optimizer, num_epochs=num_epochs)
-            val_mse,val_r2,val_y_pred,val_y_true,test_mse,test_r2,test_y_pred,test_y_true = val_model(net, dataloaders_dict)
+
+            # net, val_loss_history, train_loss_history = train_model(net, dataloaders_dict, num_epochs=num_epochs)
+            net, val_loss_history, train_loss_history = mp.spawn(train_model, nprocs=args.gpus, args=(net, HSI_datasets, num_epochs,))
+
+            # val_mse,val_r2,val_y_pred,val_y_true,test_mse,test_r2,test_y_pred,test_y_true = val_model(net, HSI_datasets)
             results = {}
             results['val_loss_history'] = [np.round(h,4) for h in val_loss_history]
             results['train_loss_history'] = [np.round(h, 4) for h in train_loss_history]
-            results['val_mse'] = np.round(val_mse,4)
-            results['val_r2'] = np.round(val_r2,4)
-            results['val_y_pred'] = [np.round(h,4) for h in val_y_pred]
-            results['val_y_true'] = [np.round(h, 4) for h in val_y_true]
-            results['test_mse'] = np.round(test_mse,4)
-            results['test_r2'] = np.round(test_r2,4)
-            results['test_y_pred'] = [np.round(h, 4) for h in test_y_pred]
-            results['test_y_true'] = [np.round(h, 4) for h in test_y_true]
+            # results['val_mse'] = np.round(val_mse,4)
+            # results['val_r2'] = np.round(val_r2,4)
+            # results['val_y_pred'] = [np.round(h,4) for h in val_y_pred]
+            # results['val_y_true'] = [np.round(h, 4) for h in val_y_true]
+            # results['test_mse'] = np.round(test_mse,4)
+            # results['test_r2'] = np.round(test_r2,4)
+            # results['test_y_pred'] = [np.round(h, 4) for h in test_y_pred]
+            # results['test_y_true'] = [np.round(h, 4) for h in test_y_true]
             with open(results_base_model, 'a') as f:
                 f.write('modified_model_' + model_name + '_learning_rate of ' + str(learning_rate) + '_weight_decay of ' + str(weight_decay) + ':' + '\n')
                 for item in results:
