@@ -11,19 +11,12 @@ from torch.utils.data import Dataset
 import time
 import os
 import copy
-from spectral import *
 import math
 import pickle
-import p2_resnet3D as resnet3D
 import p2_resnet3D_modified_1 as resnet3D_modified_1
 import p2_resnet3D_modified_2 as resnet3D_modified_2
 import p2_resnet3D_modified_3 as resnet3D_modified_3
 import p2_resnet3D_modified_4 as resnet3D_modified_4
-import p2_squeezenet3D as squeezenet3D
-import p2_shufflenet3D as shufflenet3D
-import p2_mobilenet3D as mobilenet3D
-# import p2_densenet3D as densenet3D
-# import matplotlib.pyplot as plt
 
 print("PyTorch Version: ", torch.__version__)
 print("Torchvision Version: ", torchvision.__version__)
