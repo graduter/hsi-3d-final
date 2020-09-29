@@ -328,7 +328,7 @@ for model_name in model_name_list:
             if model_name == 'resnet3D_modified_6':
                 net = resnet3D_modified_6.generate_model(model_depth=10, n_classes=num_output, n_input_channels=1)
             if model_name == 'resnet3D_modified_7':
-                net = resnet3D_modified_7.generate_model(n_classes=num_output, n_input_channels=1)
+                net = resnet3D_modified_7.MergeNet(n_classes=num_output, n_input_channels=1)
             # if model_name == 'squeezenet3D':
             #     net = squeezenet3D.get_model(version=1.1, sample_duration=image_depth, sample_size_w=image_width, sample_size_l=image_length, num_classes=num_output)
             # if model_name == 'shufflenet3D':
