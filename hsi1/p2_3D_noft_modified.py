@@ -17,6 +17,10 @@ import p2_resnet3D_modified_1 as resnet3D_modified_1
 import p2_resnet3D_modified_2 as resnet3D_modified_2
 import p2_resnet3D_modified_3 as resnet3D_modified_3
 import p2_resnet3D_modified_4 as resnet3D_modified_4
+import p2_resnet3D_modified_5 as resnet3D_modified_5
+import p2_resnet3D_modified_6 as resnet3D_modified_6
+import p2_resnet3D_modified_7 as resnet3D_modified_7
+
 
 print("PyTorch Version: ", torch.__version__)
 print("Torchvision Version: ", torchvision.__version__)
@@ -28,7 +32,7 @@ results_base_model = '/home/data/zfl/results/results_from_scratch_modified_rerun
 num_output = 1
 batch_size = 8
 num_epochs = 70
-model_name_list = ['resnet3D_modified_4','resnet3D_modified_3','resnet3D_modified_2','resnet3D_modified_1']                   # 'C3D','squeezenet3D','shufflenet3D','mobilenet3D'
+model_name_list = ['resnet3D_modified_4','resnet3D_modified_3','resnet3D_modified_2','resnet3D_modified_1','resnet3D_modified_5','resnet3D_modified_6','resnet3D_modified_7']                   # 'C3D','squeezenet3D','shufflenet3D','mobilenet3D'
 learning_rate_list_large = [0.001,0.0001,0.00001]
 learning_rate_list_small = [0.00005,0.00001,0.000005]
 weight_decay_list = [0.01,0.001,0.0001]
@@ -303,7 +307,7 @@ dataloaders_dict = get_data()
 criterion = nn.MSELoss()                                                                     # nn.CrossEntropyLoss()
 
 for model_name in model_name_list:
-    if model_name in ['resnet3D_modified_1','resnet3D_modified_2','resnet3D_modified_3','resnet3D_modified_4','resnet3D_modified_5']:
+    if model_name in ['resnet3D_modified_1','resnet3D_modified_2','resnet3D_modified_3','resnet3D_modified_4','resnet3D_modified_5','resnet3D_modified_6','resnet3D_modified_7']:
         learning_rate_list = learning_rate_list_large
     if model_name in ['C3D']:
         learning_rate_list = learning_rate_list_small
@@ -319,6 +323,12 @@ for model_name in model_name_list:
                 net = resnet3D_modified_3.generate_model(model_depth=18, n_classes=num_output, n_input_channels=1)
             if model_name == 'resnet3D_modified_4':
                 net = resnet3D_modified_4.generate_model(model_depth=18, n_classes=num_output, n_input_channels=1)
+            if model_name == 'resnet3D_modified_5':
+                net = resnet3D_modified_5.generate_model(model_depth=18, n_classes=num_output, n_input_channels=1)
+            if model_name == 'resnet3D_modified_6':
+                net = resnet3D_modified_6.generate_model(model_depth=10, n_classes=num_output, n_input_channels=1)
+            if model_name == 'resnet3D_modified_7':
+                net = resnet3D_modified_7.generate_model(n_classes=num_output, n_input_channels=1)
             # if model_name == 'squeezenet3D':
             #     net = squeezenet3D.get_model(version=1.1, sample_duration=image_depth, sample_size_w=image_width, sample_size_l=image_length, num_classes=num_output)
             # if model_name == 'shufflenet3D':

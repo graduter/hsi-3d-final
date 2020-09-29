@@ -19,7 +19,7 @@ def conv3x3x3(in_planes, out_planes, stride=1):
                      bias=False)
 
 
-def conv5x1x1(in_planes, out_planes, stride=1):
+def conv5x1x1(in_planes, out_planes, stride=(1,1,1)):
     return nn.Conv3d(in_planes,
                      out_planes,
                      kernel_size=(5,1,1),
@@ -28,12 +28,12 @@ def conv5x1x1(in_planes, out_planes, stride=1):
                      bias=False)
 
 
-def conv9x1x1(in_planes, out_planes, stride=1):
+def conv5x2x2(in_planes, out_planes, stride=(2,2,2)):
     return nn.Conv3d(in_planes,
                      out_planes,
-                     kernel_size=(9,1,1),
+                     kernel_size=(5,2,2),
                      stride=stride,
-                     padding=(0,0,0),
+                     padding=(2,0,0),
                      bias=False)
 
 
@@ -52,10 +52,10 @@ class BasicBlock_1(nn.Module):
     def __init__(self, in_planes, planes, stride=1, downsample=None):
         super().__init__()
 
-        self.conv1 = conv3x3x3(in_planes, planes, stride)
+        self.conv1 = conv5x1x1(in_planes, planes, stride)
         self.bn1 = nn.BatchNorm3d(planes)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = conv3x3x3(planes, planes)
+        self.conv2 = conv5x1x1(planes, planes)
         self.bn2 = nn.BatchNorm3d(planes)
         self.downsample = downsample
         self.stride = stride
@@ -86,7 +86,7 @@ class BasicBlock_2(nn.Module):
     def __init__(self, in_planes, planes, stride=1, downsample=None):
         super().__init__()
 
-        self.conv1 = conv5x1x1(in_planes, planes, stride)
+        self.conv1 = conv5x2x2(in_planes, planes)
         self.bn1 = nn.BatchNorm3d(planes)
         self.relu = nn.ReLU(inplace=True)
         self.conv2 = conv5x1x1(planes, planes)
@@ -183,19 +183,19 @@ class ResNet(nn.Module):
         self.bn1 = nn.BatchNorm3d(self.in_planes)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool3d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block_1,block_2, block_inplanes[0], layers[0],
+        self.layer1 = self._make_layer(block_1, block_inplanes[0], layers[0],
                                        shortcut_type)
-        self.layer2 = self._make_layer(block_1,block_2,
+        self.layer2 = self._make_layer(block_2,
                                        block_inplanes[1],
                                        layers[1],
                                        shortcut_type,
                                        stride=2)
-        self.layer3 = self._make_layer(block_1,block_2,
+        self.layer3 = self._make_layer(block_2,
                                        block_inplanes[2],
                                        layers[2],
                                        shortcut_type,
                                        stride=2)
-        self.layer4 = self._make_layer(block_1,block_2,
+        self.layer4 = self._make_layer(block_2,
                                        block_inplanes[3],
                                        layers[3],
                                        shortcut_type,
@@ -224,31 +224,30 @@ class ResNet(nn.Module):
 
         return out
 
-    def _make_layer(self, block_1,block_2, planes, blocks, shortcut_type, stride=1):
+    def _make_layer(self, block, planes, blocks, shortcut_type, stride=1):
 
         downsample_1 = None
-        if stride != 1 or self.in_planes != planes * block_1.expansion:
+        if stride != 1 or self.in_planes != planes * block.expansion:
             if shortcut_type == 'A':
                 downsample_1 = partial(self._downsample_basic_block,
-                                     planes=planes * block_1.expansion,
+                                     planes=planes * block.expansion,
                                      stride=stride)
             else:
                 downsample_1 = nn.Sequential(
-                    conv1x1x1(self.in_planes, planes * block_1.expansion, stride),
-                    nn.BatchNorm3d(planes * block_1.expansion))
+                    conv5x2x2(self.in_planes, planes * block.expansion, stride),
+                    nn.BatchNorm3d(planes * block.expansion))
 
         layers = []
         layers.append(
-            block_1(in_planes=self.in_planes,
+            block(in_planes=self.in_planes,
                   planes=planes,
                   stride=stride,
                   downsample=downsample_1))
-        self.in_planes = planes * block_1.expansion
+        self.in_planes = planes * block.expansion
 
-        downsample_2 = None
-            # nn.Sequential(
-            # conv1x1x1(self.in_planes, planes),
-            # nn.BatchNorm3d(planes))
+        downsample_2 = nn.Sequential(
+            conv5x1x1(self.in_planes, planes),
+            nn.BatchNorm3d(planes))
 
         for i in range(1, blocks):
             layers.append(
