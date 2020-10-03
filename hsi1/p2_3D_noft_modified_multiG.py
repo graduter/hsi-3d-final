@@ -307,64 +307,63 @@ criterion = nn.MSELoss()                                                        
 
 for model_name in model_name_list:
     if model_name in ['resnet3D_modified_1','resnet3D_modified_2','resnet3D_modified_3','resnet3D_modified_4','resnet3D_modified_5','resnet3D_modified_6','resnet3D_modified_7']:
-        learning_rate_list = learning_rate_list_large
-    for learning_rate in learning_rate_list:
-        for weight_decay in weight_decay_list:
-            # if model_name == 'C3D':
-            #     net = C3D(n=C3D_basic_channel_num, image_depth=image_depth, image_width=image_width, image_length=image_length, num_classes=num_output)
-            if model_name == 'resnet3D_modified_1':
-                net = resnet3D_modified_1.generate_model(model_depth=18, n_classes=num_output, n_input_channels=1)
-            if model_name == 'resnet3D_modified_2':
-                net = resnet3D_modified_2.generate_model(model_depth=18, n_classes=num_output, n_input_channels=1)
-            if model_name == 'resnet3D_modified_3':
-                net = resnet3D_modified_3.generate_model(model_depth=18, n_classes=num_output, n_input_channels=1)
-            if model_name == 'resnet3D_modified_4':
-                net = resnet3D_modified_4.generate_model(model_depth=18, n_classes=num_output, n_input_channels=1)
-            if model_name == 'resnet3D_modified_5':
-                net = resnet3D_modified_5.generate_model(model_depth=18, n_classes=num_output, n_input_channels=1)
-            if model_name == 'resnet3D_modified_6':
-                net = resnet3D_modified_6.generate_model(model_depth=10, n_classes=num_output, n_input_channels=1)
-            if model_name == 'resnet3D_modified_7':
-                net = resnet3D_modified_7.MergeNet(n_classes=num_output, n_input_channels=1)
-            # if model_name == 'squeezenet3D':
-            #     net = squeezenet3D.get_model(version=1.1, sample_duration=image_depth, sample_size_w=image_width, sample_size_l=image_length, num_classes=num_output)
-            # if model_name == 'shufflenet3D':
-            #     net = shufflenet3D.get_model(groups=3, num_classes=num_output)
-            # if model_name == 'mobilenet3D':
-            #     net = mobilenet3D.get_model(num_classes=num_output)
-            print(net)
-            net = torch.nn.DataParallel(net, device_ids = device_ids)
-            if hasattr(torch.cuda, 'empty_cache'):
-                torch.cuda.empty_cache()
-            net = net.to(device)
-            net_total_params = sum(p.numel() for p in net.parameters() if p.requires_grad)
-            print("Total number of trainable parameters of " + model_name + " is: {}".format(net_total_params))
-            print("Initial learning rate is: {}".format(learning_rate))
-            print("weight decay is: {}".format(weight_decay))
-            optimizer = optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9, weight_decay=weight_decay)
-            scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
-            net, val_loss_history, train_loss_history = train_model(net, dataloaders_dict, criterion, optimizer, num_epochs=num_epochs)
-            val_mse,val_r2,val_y_pred,val_y_true,test_mse,test_r2,test_y_pred,test_y_true = test_model(net, dataloaders_dict)
-            results = {}
-            results['val_loss_history'] = [np.round(h,4) for h in val_loss_history]
-            results['train_loss_history'] = [np.round(h, 4) for h in train_loss_history]
-            results['val_mse'] = np.round(val_mse,4)
-            results['val_r2'] = np.round(val_r2,4)
-            results['val_y_pred'] = [np.round(h,4) for h in val_y_pred]
-            results['val_y_true'] = [np.round(h, 4) for h in val_y_true]
-            results['test_mse'] = np.round(test_mse,4)
-            results['test_r2'] = np.round(test_r2,4)
-            results['test_y_pred'] = [np.round(h, 4) for h in test_y_pred]
-            results['test_y_true'] = [np.round(h, 4) for h in test_y_true]
-            with open(results_base_model, 'a') as f:
-                f.write('modified_model_' + model_name + '_learning_rate of ' + str(learning_rate) + '_weight_decay of ' + str(weight_decay) + ':' + '\n')
-                for item in results:
-                    f.write('\n')
-                    f.write(item)
-                    f.write('\n')
-                    f.write(str(results[item]))
-                    f.write('\n')
-                f.write('\n' + '##########################################' + '\n' + '\n')
+        for learning_rate in learning_rate_list_large:
+            for weight_decay in weight_decay_list:
+                # if model_name == 'C3D':
+                #     net = C3D(n=C3D_basic_channel_num, image_depth=image_depth, image_width=image_width, image_length=image_length, num_classes=num_output)
+                if model_name == 'resnet3D_modified_1':
+                    net = resnet3D_modified_1.generate_model(model_depth=18, n_classes=num_output, n_input_channels=1)
+                if model_name == 'resnet3D_modified_2':
+                    net = resnet3D_modified_2.generate_model(model_depth=18, n_classes=num_output, n_input_channels=1)
+                if model_name == 'resnet3D_modified_3':
+                    net = resnet3D_modified_3.generate_model(model_depth=18, n_classes=num_output, n_input_channels=1)
+                if model_name == 'resnet3D_modified_4':
+                    net = resnet3D_modified_4.generate_model(model_depth=18, n_classes=num_output, n_input_channels=1)
+                if model_name == 'resnet3D_modified_5':
+                    net = resnet3D_modified_5.generate_model(model_depth=18, n_classes=num_output, n_input_channels=1)
+                if model_name == 'resnet3D_modified_6':
+                    net = resnet3D_modified_6.generate_model(model_depth=10, n_classes=num_output, n_input_channels=1)
+                if model_name == 'resnet3D_modified_7':
+                    net = resnet3D_modified_7.MergeNet(n_classes=num_output, n_input_channels=1)
+                # if model_name == 'squeezenet3D':
+                #     net = squeezenet3D.get_model(version=1.1, sample_duration=image_depth, sample_size_w=image_width, sample_size_l=image_length, num_classes=num_output)
+                # if model_name == 'shufflenet3D':
+                #     net = shufflenet3D.get_model(groups=3, num_classes=num_output)
+                # if model_name == 'mobilenet3D':
+                #     net = mobilenet3D.get_model(num_classes=num_output)
+                print(net)
+                net = torch.nn.DataParallel(net, device_ids = device_ids)
+                if hasattr(torch.cuda, 'empty_cache'):
+                    torch.cuda.empty_cache()
+                net = net.to(device)
+                net_total_params = sum(p.numel() for p in net.parameters() if p.requires_grad)
+                print("Total number of trainable parameters of " + model_name + " is: {}".format(net_total_params))
+                print("Initial learning rate is: {}".format(learning_rate))
+                print("weight decay is: {}".format(weight_decay))
+                optimizer = optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9, weight_decay=weight_decay)
+                scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+                net, val_loss_history, train_loss_history = train_model(net, dataloaders_dict, criterion, optimizer, num_epochs=num_epochs)
+                val_mse,val_r2,val_y_pred,val_y_true,test_mse,test_r2,test_y_pred,test_y_true = test_model(net, dataloaders_dict)
+                results = {}
+                results['val_loss_history'] = [np.round(h,4) for h in val_loss_history]
+                results['train_loss_history'] = [np.round(h, 4) for h in train_loss_history]
+                results['val_mse'] = np.round(val_mse,4)
+                results['val_r2'] = np.round(val_r2,4)
+                results['val_y_pred'] = [np.round(h,4) for h in val_y_pred]
+                results['val_y_true'] = [np.round(h, 4) for h in val_y_true]
+                results['test_mse'] = np.round(test_mse,4)
+                results['test_r2'] = np.round(test_r2,4)
+                results['test_y_pred'] = [np.round(h, 4) for h in test_y_pred]
+                results['test_y_true'] = [np.round(h, 4) for h in test_y_true]
+                with open(results_base_model, 'a') as f:
+                    f.write('modified_model_' + model_name + '_learning_rate of ' + str(learning_rate) + '_weight_decay of ' + str(weight_decay) + ':' + '\n')
+                    for item in results:
+                        f.write('\n')
+                        f.write(item)
+                        f.write('\n')
+                        f.write(str(results[item]))
+                        f.write('\n')
+                    f.write('\n' + '##########################################' + '\n' + '\n')
 
 
 print('Finished Training')
