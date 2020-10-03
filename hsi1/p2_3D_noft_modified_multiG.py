@@ -33,8 +33,7 @@ num_output = 1
 batch_size = 8
 num_epochs = 70
 model_name_list = ['resnet3D_modified_4','resnet3D_modified_3','resnet3D_modified_2','resnet3D_modified_1','resnet3D_modified_5','resnet3D_modified_6','resnet3D_modified_7']                   # 'C3D','squeezenet3D','shufflenet3D','mobilenet3D'
-# learning_rate_list_large = [0.001,0.0001,0.00001]
-learning_rate_list_large = [0.00001]
+learning_rate_list_large = [0.001, 0.0001, 0.0005, 0.00001, 0.00005]
 learning_rate_list_small = [0.00005,0.00001]
 weight_decay_list = [0.01,0.001,0.0001]
 weight_decay_list = [0.0001]
@@ -300,7 +299,7 @@ parser.add_argument('-model_name', '--model_name', default='', type=str, metavar
 args = parser.parse_args()
 data_dir = args.data_dir
 results_base_model = args.result_dir
-model_name_list = [args.model_name]
+model_name_list = args.model_name
 num_epochs=args.epochs
 
 
