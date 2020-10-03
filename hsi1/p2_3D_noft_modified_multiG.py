@@ -34,9 +34,7 @@ batch_size = 8
 num_epochs = 70
 model_name_list = ['resnet3D_modified_4','resnet3D_modified_3','resnet3D_modified_2','resnet3D_modified_1','resnet3D_modified_5','resnet3D_modified_6','resnet3D_modified_7']                   # 'C3D','squeezenet3D','shufflenet3D','mobilenet3D'
 learning_rate_list_large = [0.001, 0.0001, 0.0005, 0.00001, 0.00005]
-learning_rate_list_small = [0.00005,0.00001]
 weight_decay_list = [0.01,0.001,0.0001]
-weight_decay_list = [0.0001]
 device_ids = [0,1]
 C3D_basic_channel_num = 16
 image_depth = 140
@@ -310,8 +308,6 @@ criterion = nn.MSELoss()                                                        
 for model_name in model_name_list:
     if model_name in ['resnet3D_modified_1','resnet3D_modified_2','resnet3D_modified_3','resnet3D_modified_4','resnet3D_modified_5','resnet3D_modified_6','resnet3D_modified_7']:
         learning_rate_list = learning_rate_list_large
-    if model_name in ['C3D']:
-        learning_rate_list = learning_rate_list_small
     for learning_rate in learning_rate_list:
         for weight_decay in weight_decay_list:
             # if model_name == 'C3D':
