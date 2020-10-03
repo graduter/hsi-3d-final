@@ -292,12 +292,12 @@ parser.add_argument('-data_dir', '--data_dir', default='/hsi-data/train_resized_
                     help='number of total epochs to run')
 parser.add_argument('-result_dir', '--result_dir', default='', type=str, metavar='N',
                     help='number of total epochs to run')
-parser.add_argument('-model_name', '--model_name', default='', type=list, metavar='N',
-                    help='model name')
+# parser.add_argument('-model_name', '--model_name', default='', type=str, metavar='N',
+#                     help='model name')
 args = parser.parse_args()
 data_dir = args.data_dir
 results_base_model = args.result_dir
-model_name_list = args.model_name
+# model_name_list = args.model_name
 num_epochs=args.epochs
 
 print(model_name_list)
