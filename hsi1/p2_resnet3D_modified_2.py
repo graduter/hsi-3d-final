@@ -73,7 +73,7 @@ class BasicBlock(nn.Module):
         self.conv2_3 = conv7x3x3(planes, int(planes/4))
         self.bn2_3 = nn.BatchNorm3d(int(planes/4))
 
-        self.conv2_4 = conv9x1x1(planes,int(planes/4))
+        self.conv2_4 = conv3x3x3(planes,int(planes/4))
         self.bn2_4 = nn.BatchNorm3d(int(planes/4))
 
         self.downsample = downsample
