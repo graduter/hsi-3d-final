@@ -300,6 +300,8 @@ results_base_model = args.result_dir
 model_name_list = args.model_name
 num_epochs=args.epochs
 
+print(model_name_list)
+
 
 # run and save results
 dataloaders_dict = get_data()
