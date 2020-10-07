@@ -32,7 +32,6 @@ results_base_model = '/home/data/zfl/results/results_a.txt'
 num_output = 1
 batch_size = 8
 num_epochs = 70
-
 model_name_list = ['p2_resnet3D_a_2']
 learning_rate_list_large = [0.001, 0.0001, 0.0005, 0.00001, 0.00005]
 weight_decay_list = [0.01,0.001,0.0001]
