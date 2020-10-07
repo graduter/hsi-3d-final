@@ -37,7 +37,7 @@ model_name_list = ['p2_resnet3D_a_3','p2_resnet3D_a_4',
                    'p2_resnet3D_a_5','p2_resnet3D_a_6','p2_resnet3D_a_7','p2_resnet3D_a_8']
 learning_rate_list_large = [0.001, 0.0001, 0.0005, 0.00001, 0.00005]
 weight_decay_list = [0.01,0.001,0.0001]
-device_ids = [0]
+device_ids = [0,1]
 C3D_basic_channel_num = 16
 image_depth = 140
 image_width = 160
