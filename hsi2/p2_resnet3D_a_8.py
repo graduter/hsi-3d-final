@@ -53,9 +53,9 @@ class BandAttention(nn.Module):
         self.avg_pool = nn.AdaptiveAvgPool3d((None,1,1))
         self.max_pool = nn.AdaptiveMaxPool3d((None,1,1))
 
-        self.fc1   = nn.Conv3d(1, 1, kernel_size=(3,1,1), stride=(1,1,1), padding=(1,0,0), bias=False)
+        self.fc1   = nn.Conv3d(1, 1, kernel_size=(1,1,1), stride=(1,1,1), padding=(0,0,0), bias=False)
         self.relu1 = nn.ReLU()
-        self.fc2   = nn.Conv3d(1, 1, kernel_size=(3,1,1), stride=(1,1,1), padding=(1,0,0), bias=False)
+        self.fc2   = nn.Conv3d(1, 1, kernel_size=(1,1,1), stride=(1,1,1), padding=(0,0,0), bias=False)
 
         self.sigmoid = nn.Sigmoid()
 
