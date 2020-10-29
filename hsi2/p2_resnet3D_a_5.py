@@ -48,23 +48,24 @@ class ChannelAttention(nn.Module):
 
 
 class BandAttention(nn.Module):
-    def __init__(self):
+    def __init__(self, bandnum):
         super(BandAttention, self).__init__()
         self.avg_pool = nn.AdaptiveAvgPool3d((None,1,1))
         self.max_pool = nn.AdaptiveMaxPool3d((None,1,1))
 
-        self.fc1   = nn.Conv3d(1, 1, kernel_size=(1,1,1), stride=(1,1,1), padding=(0,0,0), bias=False)
+        self.fc1   = nn.Conv2d(bandnum, bandnum // 2, kernel_size=(1,1), stride=(1,1), padding=(0,0), bias=False)
         self.relu1 = nn.ReLU()
-        self.fc2   = nn.Conv3d(1, 1, kernel_size=(1,1,1), stride=(1,1,1), padding=(0,0,0), bias=False)
+        self.fc2   = nn.Conv2d(bandnum // 2, bandnum, kernel_size=(1,1), stride=(1,1), padding=(0,0), bias=False)
 
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        x_1 = torch.mean(self.avg_pool(x), dim=1, keepdim=True)
-        x_2,_ = torch.max(self.max_pool(x), dim=1, keepdim=True)
+        x_1 = torch.mean(self.avg_pool(x), dim=1, keepdim=False)
+        x_2,_ = torch.max(self.max_pool(x), dim=1, keepdim=False)
         avg_out = self.fc2(self.relu1(self.fc1(x_1)))
         max_out = self.fc2(self.relu1(self.fc1(x_2)))
         out = avg_out + max_out
+        out = out.unsqueeze(1)
         return self.sigmoid(out)
 
 
@@ -72,7 +73,7 @@ class BandAttention(nn.Module):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, in_planes, planes, stride=1, downsample=None):
+    def __init__(self, in_planes, planes, stride=1, downsample=None, bandnum=70):
         super().__init__()
 
         self.conv1 = conv3x3x3(in_planes, planes, stride)
@@ -82,7 +83,7 @@ class BasicBlock(nn.Module):
         self.bn2 = nn.BatchNorm3d(planes)
 
         self.ca = ChannelAttention(planes)
-        self.ba = BandAttention()
+        self.ba = BandAttention(bandnum)
 
         self.downsample = downsample
         self.stride = stride
@@ -178,22 +179,26 @@ class ResNet(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool3d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, block_inplanes[0], layers[0],
-                                       shortcut_type)
+                                       shortcut_type,
+                                       bandnum=70)
         self.layer2 = self._make_layer(block,
                                        block_inplanes[1],
                                        layers[1],
                                        shortcut_type,
-                                       stride=2)
+                                       stride=2,
+                                       bandnum=35)
         self.layer3 = self._make_layer(block,
                                        block_inplanes[2],
                                        layers[2],
                                        shortcut_type,
-                                       stride=2)
+                                       stride=2,
+                                       bandnum=18)
         self.layer4 = self._make_layer(block,
                                        block_inplanes[3],
                                        layers[3],
                                        shortcut_type,
-                                       stride=2)
+                                       stride=2,
+                                       bandnum=9)
 
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
         self.fc = nn.Linear(block_inplanes[3] * block.expansion, n_classes)
@@ -218,7 +223,7 @@ class ResNet(nn.Module):
 
         return out
 
-    def _make_layer(self, block, planes, blocks, shortcut_type, stride=1):
+    def _make_layer(self, block, planes, blocks, shortcut_type, stride=1, bandnum=70):
         downsample = None
         if stride != 1 or self.in_planes != planes * block.expansion:
             if shortcut_type == 'A':
@@ -235,10 +240,11 @@ class ResNet(nn.Module):
             block(in_planes=self.in_planes,
                   planes=planes,
                   stride=stride,
-                  downsample=downsample))
+                  downsample=downsample,
+                  bandnum=bandnum))
         self.in_planes = planes * block.expansion
         for i in range(1, blocks):
-            layers.append(block(self.in_planes, planes))
+            layers.append(block(self.in_planes, planes, bandnum=bandnum))
 
         return nn.Sequential(*layers)
 
