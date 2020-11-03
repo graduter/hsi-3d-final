@@ -28,12 +28,12 @@ results_base_model = '/home/data/zfl/results/results_from_scratch_base.txt'
 num_output = 1
 batch_size = 8
 num_epochs = 1
-model_name_list = ['resnet3D','resnet2D','squeezenet3D','mobilenet3D']                   # 'shufflenet3D',
+model_name_list = ['C3D']                   # 'shufflenet3D',
 learning_rate_list_large = [0.001]
 learning_rate_list_small = [0.00005]
 weight_decay_list = [0.01]
 device_ids = [0]
-C3D_basic_channel_num = 16
+C3D_basic_channel_num = 64
 image_depth = 140
 image_width = 160
 image_length = 160
@@ -153,7 +153,7 @@ class C3D(nn.Module):
         last_width = int(math.ceil(image_width / 32))
         last_length = int(math.ceil(image_length / 32))
         self.fc1 = nn.Sequential(
-            nn.Linear((8*n * last_depth * last_width * last_length), 64*n),
+            nn.Linear((8*n * 288), 64*n),
             nn.ReLU(),
             nn.Dropout(0.5))
         self.fc2 = nn.Sequential(
