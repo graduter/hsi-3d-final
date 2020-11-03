@@ -11,16 +11,12 @@ from torch.utils.data import Dataset
 import time
 import os
 import copy
-from spectral import *
 import math
 import pickle
 import p2_resnet3D as resnet3D
 import p2_squeezenet3D as squeezenet3D
-import p2_shufflenet3D as shufflenet3D
 import p2_mobilenet3D as mobilenet3D
-# import p2_densenet3D as densenet3D
-# import matplotlib.pyplot as plt
-
+import argparse
 
 print("PyTorch Version: ", torch.__version__)
 print("Torchvision Version: ", torchvision.__version__)
@@ -31,12 +27,12 @@ data_dir = '/home/data/zfl/data'
 results_base_model = '/home/data/zfl/results/results_from_scratch_base.txt'
 num_output = 1
 batch_size = 8
-num_epochs = 70
+num_epochs = 1
 model_name_list = ['resnet3D','resnet2D','C3D','squeezenet3D','mobilenet3D']                   # 'shufflenet3D',
-learning_rate_list_large = [0.001,0.0001,0.00001]
-learning_rate_list_small = [0.00005,0.00001,0.000005]
-weight_decay_list = [0.01,0.001,0.0001]
-device_ids = [0,1]
+learning_rate_list_large = [0.001]
+learning_rate_list_small = [0.00005]
+weight_decay_list = [0.01]
+device_ids = [0]
 C3D_basic_channel_num = 16
 image_depth = 140
 image_width = 160
@@ -290,6 +286,23 @@ def test_model(model, dataloaders):
         return val_mse,val_r2,val_y_pred,val_y_true,test_mse,test_r2,test_y_pred,test_y_true
 
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--epochs', default=70, type=int, metavar='N',
+                    help='number of total epochs to run')
+parser.add_argument('-data_dir', '--data_dir', default='/hsi-data/train_resized_merged', type=str, metavar='N',
+                    help='number of total epochs to run')
+parser.add_argument('-result_dir', '--result_dir', default='', type=str, metavar='N',
+                    help='number of total epochs to run')
+# parser.add_argument('-model_name', '--model_name', default='', type=str, metavar='N',
+#                     help='model name')
+args = parser.parse_args()
+data_dir = args.data_dir
+results_base_model = args.result_dir
+# model_name_list = args.model_name
+num_epochs=args.epochs
+
+print(model_name_list)
 
 
 # run and save results
